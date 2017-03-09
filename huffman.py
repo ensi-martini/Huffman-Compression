@@ -196,31 +196,32 @@ def get_codes(tree):
         
         if tree.left:
             
-            #if its a leaf node
             if tree.left.symbol:
                 output[tree.left.symbol] = _get_codes(tree, tree.left.symbol)
-                
+
             else:
-                temp = get_codes(tree.right)
+                temp = get_codes(tree.left)
                                 
                 for t in temp:
-                    temp[t] = '0' + temp[t]                
+                    temp[t] = '0' + temp[t]
+                    
                 output.update(temp)
             
         if tree.right:
-            
+        
             if tree.right.symbol:
                 output[tree.right.symbol] = _get_codes(tree, tree.right.symbol)
+                
             else:
                 temp = get_codes(tree.right)
                 
                 for t in temp:
                     temp[t] = '1' + temp[t]
                     
-                output.update(temp)
-                
+                output.update(temp) 
     return output
 
+#test helper function
 def _get_codes(t, n):
     ''' Find n in t and return it's binary address, or empty string if it is
     not found
@@ -266,8 +267,29 @@ def number_nodes(tree):
     >>> tree.number
     2
     """
-    # todo
+    
+    #Do a postorder traversal of the tree.
+    #Assign the first internal node (node with children) the number 0.
+    #Every internal node found after is going to be assigned a number starting
+    #from 0.
+    #Reassign each 'None' or Internal Node, according to its postorder traversal
+    #position number.
+    
+    def _postorder(tree):
+        
+        #if we hit a leaf node
+        if not tree or (not tree.left and not tree.right):
+            return []
+        return t(tree.left) + _postorder(tree.right) + [tree.symbol]
+            
+    return _postorder(tree)       
 
+def _postorder(tree):
+    
+    #if we hit a leaf node
+    if not tree or (not tree.left and not tree.right):
+        return []
+    return _postorder(tree.left) + _postorder(tree.right) + [(tree.symbol, tree.number)]
 
 def avg_length(tree, freq_dict):
     """ Return the number of bits per symbol required to compress text
@@ -284,7 +306,15 @@ def avg_length(tree, freq_dict):
     >>> avg_length(tree, freq)
     1.9
     """
-    # todo
+    
+    #1. Multiply the code for the Key by its frequency for each key.
+    #2. Sum all those values.
+    #3. Divide by the total frequency.
+    
+    
+    #
+    
+        
 
 
 def generate_compressed(text, codes):
