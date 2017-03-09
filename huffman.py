@@ -66,8 +66,17 @@ def make_freq_dict(text):
     >>> d == {65: 1, 66: 2, 67: 1}
     True
     """
-    # todo
-
+    
+    output_dict = {}
+    
+    for t in text:
+        
+        if t not in output_dict:
+            output_dict[t] = 0
+            
+        output_dict[t] += 1
+        
+    return output_dict
 
 def huffman_tree(freq_dict):
     """ Return the root HuffmanNode of a Huffman tree corresponding
@@ -84,6 +93,57 @@ def huffman_tree(freq_dict):
     True
     """
     # todo
+    
+    
+    
+    if len(freq_dict) > 1:
+        
+        #Find and remove the most common character, without modifying the OG
+        #dictionary
+        temp = freq_dict.copy()
+        biggest = max(temp, key=temp.get)
+        biggest = [biggest, temp.pop(biggest)]
+        
+        #We already got rid of the largest value
+        total = sum(temp.values())
+        
+        #If None's total is greater than our most common character
+        #Place the most common character on the left
+        if total > biggest[1]:
+            #We create this part first in order to set it's number attribute
+            left = HuffmanNode(symbol=biggest[0])
+            left.number = biggest[1]            
+            right = huffman_tree(temp)
+        
+        else:
+            
+            right = HuffmanNode(symbol=biggest[0])
+            right.number = biggest[1]       
+            left = huffman_tree(temp)
+            
+            
+        root = HuffmanNode(None, left, right)        
+        root.number = total + biggest[1]
+        
+        
+    else:
+        last = min(freq_dict)
+        root = HuffmanNode(symbol=last)
+        root.number = freq_dict[last]
+        
+    return root
+        
+    
+        
+        
+
+        
+        
+        
+        
+        
+        
+        
 
 
 def get_codes(tree):
@@ -357,24 +417,46 @@ def improve_tree(tree, freq_dict):
     # todo
 
 if __name__ == "__main__":
-    import python_ta
-    python_ta.check_all(config="huffman_pyta.txt")
+    
+    
+    
+    fd = {'a':2, 'b':3, 'c':4}
+    hn = huffman_tree(fd)
+    print(hn.symbol == None and hn.number == 9 and hn.left.symbol == 'c' and 
+          hn.left.number == 4 and hn.right.symbol == None and hn.right.number ==
+          5 and hn.right.left.symbol == 'a' and hn.right.left.number == 2 and
+          hn.right.right.symbol == 'b' and hn.right.right.number == 3)
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    #import python_ta
+    #python_ta.check_all(config="huffman_pyta.txt")
     # TODO: Uncomment these when you have implemented all the functions
     # import doctest
     # doctest.testmod()
 
-    import time
+    #import time
 
-    mode = input("Press c to compress or u to uncompress: ")
-    if mode == "c":
-        fname = input("File to compress: ")
-        start = time.time()
-        compress(fname, fname + ".huf")
-        print("compressed {} in {} seconds."
-              .format(fname, time.time() - start))
-    elif mode == "u":
-        fname = input("File to uncompress: ")
-        start = time.time()
-        uncompress(fname, fname + ".orig")
-        print("uncompressed {} in {} seconds."
-              .format(fname, time.time() - start))
+    #mode = input("Press c to compress or u to uncompress: ")
+    #if mode == "c":
+        #fname = input("File to compress: ")
+        #start = time.time()
+        #compress(fname, fname + ".huf")
+        #print("compressed {} in {} seconds."
+              #.format(fname, time.time() - start))
+    #elif mode == "u":
+        #fname = input("File to uncompress: ")
+        #start = time.time()
+        #uncompress(fname, fname + ".orig")
+        #print("uncompressed {} in {} seconds."
+              #.format(fname, time.time() - start))
