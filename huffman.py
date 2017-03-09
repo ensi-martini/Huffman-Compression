@@ -92,11 +92,8 @@ def huffman_tree(freq_dict):
     >>> t == result1 or t == result2
     True
     """
-    # todo
-    
-    
-    
-    if len(freq_dict) > 1:
+
+    if len(freq_dict) >= 2:
         
         #Find and remove the most common character, without modifying the OG
         #dictionary
@@ -104,46 +101,55 @@ def huffman_tree(freq_dict):
         biggest = max(temp, key=temp.get)
         biggest = [biggest, temp.pop(biggest)]
         
-        #We already got rid of the largest value
-        total = sum(temp.values())
-        
-        #If None's total is greater than our most common character
-        #Place the most common character on the left
-        if total > biggest[1]:
-            #We create this part first in order to set it's number attribute
-            left = HuffmanNode(symbol=biggest[0])
-            left.number = biggest[1]            
-            right = huffman_tree(temp)
-        
-        else:
+        if len(freq_dict) == 2:
             
-            right = HuffmanNode(symbol=biggest[0])
-            right.number = biggest[1]       
-            left = huffman_tree(temp)
+            smaller = max(temp)
+            smaller = [smaller, temp.pop(smaller)]
             
+            left = HuffmanNode(smaller[0])
+            right = HuffmanNode(biggest[0])
+            left.number = smaller[1]
+            right.number = biggest[1]
             
-        root = HuffmanNode(None, left, right)        
-        root.number = total + biggest[1]
+            root = HuffmanNode(None, left, right)
+            root.number = smaller[1] + biggest[1]
+            
         
+        elif len(freq_dict) > 2:
+            
+            #We already got rid of the largest value
+            total = sum(temp.values())
+            
+            #If None's total is greater than our most common character
+            #Place the most common character on the left
+            if total > biggest[1]:
+                #We create this part first in order to set it's number attribute
+                left = HuffmanNode(symbol=biggest[0])
+                left.number = biggest[1]            
+                right = huffman_tree(temp)
+            
+            else:
+                
+                right = HuffmanNode(symbol=biggest[0])
+                right.number = biggest[1]       
+                left = huffman_tree(temp)
+                
+                
+            root = HuffmanNode(None, left, right)        
+            root.number = total + biggest[1]
         
     else:
+        
         last = min(freq_dict)
-        root = HuffmanNode(symbol=last)
-        root.number = freq_dict[last]
+        child = HuffmanNode(last)
+        child.number = freq_dict[last]
+        root = HuffmanNode(None, child)
+        root.number = child.number
         
     return root
         
     
-        
-        
 
-        
-        
-        
-        
-        
-        
-        
 
 
 def get_codes(tree):
@@ -157,7 +163,89 @@ def get_codes(tree):
     >>> d == {3: "0", 2: "1"}
     True
     """
-    # todo
+    
+    def _get_codes(t, n):
+        ''' Find n in t and return it's binary address, or empty string if it is
+        not found
+        '''
+        address = ''
+        
+        if t:
+    
+            if t.left and t.left.symbol == n:
+                return '0'
+            
+            elif t.right and t.right.symbol == n:
+                return '1'
+            
+            if t.left:
+                temp = _get_codes(t.left, n) 
+                if temp != '':
+                    address += '0' + temp
+            
+            if t.right:
+                temp = _get_codes(t.right, n) 
+                if temp != '':
+                    address += '1' + temp             
+                
+        return address
+    
+    output = {}
+    
+    if tree:
+        
+        if tree.left:
+            
+            #if its a leaf node
+            if tree.left.symbol:
+                output[tree.left.symbol] = _get_codes(tree, tree.left.symbol)
+                
+            else:
+                temp = get_codes(tree.right)
+                                
+                for t in temp:
+                    temp[t] = '0' + temp[t]                
+                output.update(temp)
+            
+        if tree.right:
+            
+            if tree.right.symbol:
+                output[tree.right.symbol] = _get_codes(tree, tree.right.symbol)
+            else:
+                temp = get_codes(tree.right)
+                
+                for t in temp:
+                    temp[t] = '1' + temp[t]
+                    
+                output.update(temp)
+                
+    return output
+
+def _get_codes(t, n):
+    ''' Find n in t and return it's binary address, or empty string if it is
+    not found
+    '''
+    address = ''
+    
+    if t:
+
+        if t.left and t.left.symbol == n:
+            return '0'
+        
+        elif t.right and t.right.symbol == n:
+            return '1'
+        
+        if t.left:
+            temp = _get_codes(t.left, n) 
+            if temp != '':
+                address += '0' + temp
+        
+        if t.right:
+            temp = _get_codes(t.right, n) 
+            if temp != '':
+                address += '1' + temp             
+            
+    return address
 
 
 def number_nodes(tree):
@@ -428,9 +516,16 @@ if __name__ == "__main__":
           hn.right.right.symbol == 'b' and hn.right.right.number == 3)
     
     
+    #fd2 = {'a':2}
+    #hn2 = huffman_tree(fd2)
     
     
-    
+    #b = HuffmanNode()
+    #b.left = HuffmanNode('c')
+    #b.right = HuffmanNode()
+    #b.right.left = HuffmanNode()
+    #b.right.left.left = HuffmanNode('a')
+    #print( _get_codes(b, 'a') == '100')
     
     
     
