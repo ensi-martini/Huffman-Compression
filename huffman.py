@@ -278,6 +278,7 @@ def number_nodes(tree):
     def _internal_post(tree):
         
         #if we hit a leaf node
+        
         if not tree or (not tree.left and not tree.right):
             return []
         
@@ -381,9 +382,52 @@ def tree_to_bytes(tree):
     >>> list(tree_to_bytes(tree))
     [0, 3, 0, 2, 1, 0, 0, 5]
     """
-    # todo
-
-
+    
+    output = []
+    
+    #Using postorder traversal, find the first None node
+    
+    def _tree_to_bytes(tree): #Return a postorder list of None nodes in tree
+        
+        if not tree or (not tree.left and not tree.right):
+            return []
+        
+        return _tree_to_bytes(tree.left) + _tree_to_bytes(tree.right) + [tree]
+    
+    ordered = _tree_to_bytes(tree)
+    
+    for o in ordered:
+        print(o)
+        
+        #If our left is a leaf node
+        if o.left and (not o.left.left and not o.left.right):
+            output.append(0)
+            
+            output.append(o.left.symbol)
+            
+        elif o.left:
+            output.append(1)
+            
+            output.append(o.left.number)
+            
+        if o.right and (not o.right.left and not o.right.right):
+            
+            output.append(0)
+            output.append(o.right.symbol)
+            
+        elif o.right:
+            output.append(1)
+            output.append(o.right.number)
+            
+    return output
+    
+def _tree_to_bytes(tree): #Return a postorder list of None nodes in tree
+     
+    if not tree or (not tree.left and not tree.right):
+        return []
+     
+    return _internal_post(tree.left) + _internal_post(tree.right) + [tree]
+    
 def num_nodes_to_bytes(tree):
     """ Return number of nodes required to represent tree (the root of a
     numbered Huffman tree).
@@ -450,7 +494,54 @@ def generate_tree_general(node_lst, root_index):
 HuffmanNode(12, None, None)), \
 HuffmanNode(None, HuffmanNode(5, None, None), HuffmanNode(7, None, None)))
     """
-    # todo
+
+def _tester_GNG(node_list, root_index):
+    
+    nl = node_list[:]
+    
+    tree_lst = []
+    leaves = []
+    
+    root = nl.pop(root_index)
+    
+    for rn in nl:
+        
+        if rn.l_type == 0 and rn.r_type == 0:
+            leaves.append(rn)
+
+    for x in range(len(leaves)):        
+        nl.remove(leaves[x])
+        
+    internals = []
+    
+    #Now we only have internal nodes left
+    for rn in nl:
+        t = HuffmanNode()
+        if rn.l_type == 0:
+            
+            t.left = HuffmanNode(rn.l_data)
+            
+        elif rn.l_type:
+            t.left = HuffmanNode()
+            t.left.left = HuffmanNode(leaves[0].l_data)
+            t.left.right = HuffmanNode(leaves[0].r_data)
+            leaves.pop(0)
+            
+        if rn.r_type == 0:
+            
+            t.right = HuffmanNode(rn.r_data)
+            
+        elif rn.r_type:
+            t.right = HuffmanNode()
+            t.right.left = HuffmanNode(leaves[0].l_data)
+            t.right.right = HuffmanNode(leaves[0].r_data)                
+            leaves.pop(0)
+            
+        internals.append(t)
+        
+    #We should now have no items left in tree_lst, as they were all randomly
+    #Assigned as children to the internals
+    return HuffmanNode(None, internals[0], internals[1])
 
 
 def generate_tree_postorder(node_lst, root_index):
@@ -559,14 +650,45 @@ def improve_tree(tree, freq_dict):
 
 if __name__ == "__main__":
     
+    rn_lst = [ReadNode(None,None,1,3), ReadNode(0,3,1,5), ReadNode(0,4,0,5), ReadNode(1,2,1,1), ReadNode(0,1,0,2)]
+    a = _tester_GNG(rn_lst, 3)
     
     
-    fd = {'a':2, 'b':3, 'c':4}
-    hn = huffman_tree(fd)
-    print(hn.symbol == None and hn.number == 9 and hn.left.symbol == 'c' and 
-          hn.left.number == 4 and hn.right.symbol == None and hn.right.number ==
-          5 and hn.right.left.symbol == 'a' and hn.right.left.number == 2 and
-          hn.right.right.symbol == 'b' and hn.right.right.number == 3)
+    
+    #fd = {'a':2, 'b':3, 'c':4}
+    #hn = huffman_tree(fd)
+    #print(hn.symbol == None and hn.number == 9 and hn.left.symbol == 'c' and 
+          #hn.left.number == 4 and hn.right.symbol == None and hn.right.number ==
+          #5 and hn.right.left.symbol == 'a' and hn.right.left.number == 2 and
+          #hn.right.right.symbol == 'b' and hn.right.right.number == 3)
+    
+    #d = {0: "0", 1: "10", 2: "11"}
+    #text = bytes([1, 2, 1, 0])   
+    #result = generate_compressed(text, d)    
+    
+    #left = HuffmanNode(None, HuffmanNode(3), HuffmanNode(2))
+    #right = HuffmanNode(5)
+    #tree = HuffmanNode(None, left, right)
+    #number_nodes(tree)
+    #print(tree_to_bytes(tree))
+                        
+    #tree = HuffmanNode(None, HuffmanNode(t3), HuffmanNode(2))
+    #number_nodes(tree)
+    #print(tree_to_bytes(tree))    
+    
+    #tree1 = HuffmanNode(None)
+    #tree1.left = HuffmanNode(None)
+    #tree1.left.left = HuffmanNode(3)
+    #tree1.left.right = HuffmanNode(None)
+    #tree1.left.right.left = HuffmanNode(1)
+    #tree1.left.right.right = HuffmanNode(2)
+    #tree1.right = HuffmanNode(None)
+    #tree1.right.right = HuffmanNode(None)
+    #tree1.right.right.left = HuffmanNode(4)
+    #tree1.right.right.right = HuffmanNode(5)
+    #number_nodes(tree1)
+    #print(tree_to_bytes(tree1))
+    
     
     
     #fd2 = {'a':2}
@@ -609,6 +731,4 @@ if __name__ == "__main__":
         #print("uncompressed {} in {} seconds."
               #.format(fname, time.time() - start))
     
-    d = {0: "0", 1: "10", 2: "11"}
-    text = bytes([1, 2, 1, 0])   
-    result = generate_compressed(text, d)    
+    
