@@ -275,21 +275,26 @@ def number_nodes(tree):
     #Reassign each 'None' or Internal Node, according to its postorder traversal
     #position number.
     
-    def _postorder(tree):
+    def _internal_post(tree):
         
         #if we hit a leaf node
         if not tree or (not tree.left and not tree.right):
             return []
-        return t(tree.left) + _postorder(tree.right) + [tree.symbol]
+        
+        return _internal_post(tree.left) + _internal_post(tree.right) + [tree]
             
-    return _postorder(tree)       
+    internals = _internal_post(tree)
+    
+    for i in range(len(internals)):
+        
+        internals[i].number = i
 
-def _postorder(tree):
+def _internal_post(tree):
     
     #if we hit a leaf node
     if not tree or (not tree.left and not tree.right):
         return []
-    return _postorder(tree.left) + _postorder(tree.right) + [(tree.symbol, tree.number)]
+    return _internal_post(tree.left) + _internal_post(tree.right) + [tree]
 
 def avg_length(tree, freq_dict):
     """ Return the number of bits per symbol required to compress text
@@ -307,15 +312,16 @@ def avg_length(tree, freq_dict):
     1.9
     """
     
-    #1. Multiply the code for the Key by its frequency for each key.
-    #2. Sum all those values.
-    #3. Divide by the total frequency.
+    total = 0
+    divisor = sum(freq_dict.values())
     
+    code_dict = get_codes(tree)
     
-    #
-    
+    for k in code_dict:
         
-
+        total += len(code_dict[k]) * freq_dict[k]
+        
+    return total / divisor
 
 def generate_compressed(text, codes):
     """ Return compressed form of text, using mapping in codes for each symbol.
@@ -334,8 +340,16 @@ def generate_compressed(text, codes):
     >>> [byte_to_bits(byte) for byte in result]
     ['10111001', '10000000']
     """
-    # todo
+    #'{:0>8s}'.format(bit)
 
+    compressed = ''
+    
+    for t in text:
+        
+        compressed += d[int(str(t))]
+
+    return compressed
+        
 
 def tree_to_bytes(tree):
     """ Return a bytes representation of the tree rooted at tree.
@@ -585,3 +599,7 @@ if __name__ == "__main__":
         #uncompress(fname, fname + ".orig")
         #print("uncompressed {} in {} seconds."
               #.format(fname, time.time() - start))
+    
+    d = {0: "0", 1: "10", 2: "11"}
+    text = bytes([1, 2, 1, 0])   
+    result = generate_compressed(text, d)    
