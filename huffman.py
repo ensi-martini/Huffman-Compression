@@ -340,7 +340,6 @@ def generate_compressed(text, codes):
     >>> [byte_to_bits(byte) for byte in result]
     ['10111001', '10000000']
     """
-    #'{:0>8s}'.format(bit)
 
     compressed = ''
     
@@ -348,7 +347,17 @@ def generate_compressed(text, codes):
         
         compressed += d[int(str(t))]
 
-    return compressed
+    output = []
+    
+    while len(compressed) >= 8:
+        
+        output.append(bits_to_byte(compressed[:8]))
+        compressed = compressed[8:]
+        
+    if compressed != '':
+        output.append(bits_to_byte('{:0<8s}'.format(compressed)))
+        
+    return bytes(output)
         
 
 def tree_to_bytes(tree):
