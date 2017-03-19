@@ -91,67 +91,49 @@ def huffman_tree(freq_dict):
     >>> result2 = HuffmanNode(None, HuffmanNode(2), HuffmanNode(3))
     >>> t == result1 or t == result2
     True
-    """
-
+    """    
+    
     if len(freq_dict) >= 2:
         
-        #Find and remove the most common character, without modifying the OG
-        #dictionary
-        temp = freq_dict.copy()
-        biggest = max(temp, key=temp.get)
-        biggest = [biggest, temp.pop(biggest)]
+        node_list = []
         
-        if len(freq_dict) == 2:
-            
-            smaller = max(temp)
-            smaller = [smaller, temp.pop(smaller)]
-            
-            left = HuffmanNode(smaller[0])
-            right = HuffmanNode(biggest[0])
-            left.number = smaller[1]
-            right.number = biggest[1]
-            
-            root = HuffmanNode(None, left, right)
-            root.number = smaller[1] + biggest[1]
-            
-        
-        elif len(freq_dict) > 2:
-            
-            #We already got rid of the largest value
-            total = sum(temp.values())
-            
-            #If None's total is greater than our most common character
-            #Place the most common character on the left
-            if total > biggest[1]:
-                #We create this part first in order to set it's number attribute
-                left = HuffmanNode(symbol=biggest[0])
-                left.number = biggest[1]            
-                right = huffman_tree(temp)
-            
-            else:
+        #Add every key and value in the freq dict as a HNode with their proper
+        #number values
+        for n in freq_dict:
+
+            #Letters that do not appear but are in the dict for some stupid
+            #reason do not get added
+            if freq_dict[n] > 0:
+                node = HuffmanNode(n)
+                node.number = freq_dict[n]
+                node_list.append(node)
                 
-                right = HuffmanNode(symbol=biggest[0])
-                right.number = biggest[1]       
-                left = huffman_tree(temp)
-                
-                
-            root = HuffmanNode(None, left, right)        
-            root.number = total + biggest[1]
+        node_list.sort(key=lambda x: x.number)
         
-    else:
+        #After sorting from smallest to greatest occurances, iterate each time
+        #and merge the two least frequent nodes together (could be internals)
+        while len(node_list) > 1:
+            
+            #Just for testing: REMOVE THIS LATER
+            #name = node_list[0].symbol + node_list[1].symbol
+                                       
+            current_node = HuffmanNode(None, node_list[0], node_list[1])
+            current_node.number = node_list[0].number + node_list[1].number
+            
+            node_list = node_list[2:] + [current_node]
+            node_list.sort(key=lambda x: x.number)
+            
+        return node_list[0]
         
-        last = min(freq_dict)
-        child = HuffmanNode(last)
-        child.number = freq_dict[last]
-        root = HuffmanNode(None, child)
-        root.number = child.number
-        
-    return root
-        
+    root = HuffmanNode(None)
     
-
-
-
+    if len(freq_dict) == 1:
+        left = HuffmanNode(max(freq_dict))
+        left.number = freq_dict[left.symbol]
+        root.left = left
+    
+    return root
+    
 def get_codes(tree):
     """ Return a dict mapping symbols from tree rooted at HuffmanNode to codes.
 
@@ -487,17 +469,17 @@ def generate_tree_general(node_lst, root_index):
     @param int root_index: index in the node list
     @rtype: HuffmanNode
 
-    >>> lst = [ReadNode(0, 5, 0, 7), ReadNode(0, 10, 0, 12), \
-    ReadNode(1, 1, 1, 0)]
-    >>> generate_tree_general(lst, 2)
-    HuffmanNode(None, HuffmanNode(None, HuffmanNode(10, None, None), \
-HuffmanNode(12, None, None)), \
-HuffmanNode(None, HuffmanNode(5, None, None), HuffmanNode(7, None, None)))
+    >>> lst = [ReadNode(0, 5, 0, 7), ReadNode(0, 10, 0, 12)]
+    >>> lst.append(ReadNode(1, 1, 1, 0))
+    >>> a = generate_tree_general(lst, 2)
+    >>> b = HuffmanNode()
+    >>> b.right = HuffmanNode(None, HuffmanNode(10), HuffmanNode(12))
+    >>> b.left = HuffmanNode(None, HuffmanNode(5), HuffmanNode(7))
+    >>> a == b
+    True
     """
-
-def _tester_GNG(node_list, root_index):
     
-    nl = node_list[:]
+    nl = node_lst[:]
     
     tree_lst = []
     leaves = []
@@ -541,7 +523,14 @@ def _tester_GNG(node_list, root_index):
         
     #We should now have no items left in tree_lst, as they were all randomly
     #Assigned as children to the internals
-    return HuffmanNode(None, internals[0], internals[1])
+    if internals != []:
+        return HuffmanNode(None, internals[0], internals[1])
+    
+    output = HuffmanNode()
+    output.left = HuffmanNode(None, HuffmanNode(leaves[0].l_data), HuffmanNode(leaves[0].r_data))
+    output.right = HuffmanNode(None, HuffmanNode(leaves[1].l_data), HuffmanNode(leaves[1].r_data))
+    
+    return output
 
 
 def generate_tree_postorder(node_lst, root_index):
@@ -650,8 +639,40 @@ def improve_tree(tree, freq_dict):
 
 if __name__ == "__main__":
     
-    rn_lst = [ReadNode(None,None,1,3), ReadNode(0,3,1,5), ReadNode(0,4,0,5), ReadNode(1,2,1,1), ReadNode(0,1,0,2)]
-    a = _tester_GNG(rn_lst, 3)
+    #a = HuffmanNode('A')
+    #a.number = 2
+    #e = HuffmanNode("E")
+    #e.number = 3
+    #b = HuffmanNode('B')
+    #b.number = 2
+    #c = HuffmanNode('C')
+    #c.number = 2
+    #d = HuffmanNode('D')
+    #d.number = 2    
+    #nodes = [a,e,d,c,b]
+    fd = {'a':0, 'b':2, 'c': 2, 'd': 2, 'e':1, 'f':4, 'g':5}
+    a = huffman_tree2(fd)
+    b = HuffmanNode(None)
+    b.left = HuffmanNode(None)
+    b.left.left = HuffmanNode(None)
+    b.left.left.left = HuffmanNode('e')
+    b.left.left.right = HuffmanNode('c')
+    b.left.right = HuffmanNode(None)
+    b.left.right.left = HuffmanNode('b')
+    b.left.right.right = HuffmanNode('d')
+    b.right = HuffmanNode(None)
+    b.right.left = HuffmanNode('f')
+    b.right.right = HuffmanNode('g')    
+    
+    
+    print(avg_length(a, fd))
+    print(avg_length(b, fd))
+    
+   # lst = [ReadNode(0, 5, 0, 7), ReadNode(0, 10, 0, 12)]
+    #lst.append(ReadNode(1, 1, 1, 0))
+    #a = generate_tree_general(lst, 2)    
+    #rn_lst = [ReadNode(None,None,1,3), ReadNode(0,3,1,5), ReadNode(0,4,0,5), ReadNode(1,2,1,1), ReadNode(0,1,0,2)]
+    #a = _tester_GNG(rn_lst, 3)
     
     
     
@@ -712,8 +733,8 @@ if __name__ == "__main__":
     #import python_ta
     #python_ta.check_all(config="huffman_pyta.txt")
     # TODO: Uncomment these when you have implemented all the functions
-    # import doctest
-    # doctest.testmod()
+    #import doctest
+    #doctest.testmod()
 
     #import time
 
