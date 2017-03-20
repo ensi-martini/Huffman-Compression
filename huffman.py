@@ -76,7 +76,7 @@ def make_freq_dict(text):
             
         output_dict[t] += 1
         
-    return output_dict
+    return output_dict  
 
 def huffman_tree(freq_dict):
     """ Return the root HuffmanNode of a Huffman tree corresponding
@@ -536,6 +536,52 @@ def generate_tree_general(node_lst, root_index):
                                HuffmanNode(leaves[1].r_data))
     
     return output
+
+def generate_tree_general2(node_lst, root_index):
+    """ Return the root of the Huffman tree corresponding
+    to node_lst[root_index].
+
+    The function assumes nothing about the order of the nodes in the list.
+
+    @param list[ReadNode] node_lst: a list of ReadNode objects
+    @param int root_index: index in the node list
+    @rtype: HuffmanNode
+
+    >>> lst = [ReadNode(0, 5, 0, 7), ReadNode(0, 10, 0, 12)]
+    >>> lst.append(ReadNode(1, 1, 1, 0))
+    >>> a = generate_tree_general(lst, 2)
+    >>> b = HuffmanNode()
+    >>> b.right = HuffmanNode(None, HuffmanNode(10), HuffmanNode(12))
+    >>> b.left = HuffmanNode(None, HuffmanNode(5), HuffmanNode(7))
+    >>> a == b
+    True
+    """
+    
+    nodes = node_lst[:]
+    
+    root = nodes.pop(root_index)
+    
+    #We know that each node has it's node number at the same place as it's
+    #index, so if our root is not the last item in the list we need to
+    #put some placeholder to compensate
+    
+    nodes.insert(root_index, None)
+    
+    root_node = HuffmanNode()
+    
+    if root.l_type == 1:
+        root_node.left = generate_tree_general2(nodes, root.l_data)
+        
+    else:
+        root_node.left = HuffmanNode(root.l_data)
+        
+    if root.r_type == 1:
+        root_node.right = generate_tree_general2(nodes, root.r_data)
+    
+    else:
+        root_node.right = HuffmanNode(root.r_data)
+        
+    return root_node
 
 
 def generate_tree_postorder(node_lst, root_index):
