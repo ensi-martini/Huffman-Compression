@@ -481,9 +481,10 @@ def generate_tree_general(node_lst, root_index):
     
     nl = node_lst[:]
     
+    #We want to split all the subtrees we have into three catagories:
+    #root, leaves, and internals
     tree_lst = []
-    leaves = []
-    
+    leaves = []    
     root = nl.pop(root_index)
     
     for rn in nl:
@@ -498,22 +499,24 @@ def generate_tree_general(node_lst, root_index):
     
     #Now we only have internal nodes left
     for rn in nl:
+        
         t = HuffmanNode()
-        if rn.l_type == 0:
-            
+        
+        if rn.l_type == 0:            
             t.left = HuffmanNode(rn.l_data)
             
         elif rn.l_type:
+            
             t.left = HuffmanNode()
             t.left.left = HuffmanNode(leaves[0].l_data)
             t.left.right = HuffmanNode(leaves[0].r_data)
             leaves.pop(0)
             
-        if rn.r_type == 0:
-            
+        if rn.r_type == 0:            
             t.right = HuffmanNode(rn.r_data)
             
         elif rn.r_type:
+            
             t.right = HuffmanNode()
             t.right.left = HuffmanNode(leaves[0].l_data)
             t.right.right = HuffmanNode(leaves[0].r_data)                
@@ -527,8 +530,10 @@ def generate_tree_general(node_lst, root_index):
         return HuffmanNode(None, internals[0], internals[1])
     
     output = HuffmanNode()
-    output.left = HuffmanNode(None, HuffmanNode(leaves[0].l_data), HuffmanNode(leaves[0].r_data))
-    output.right = HuffmanNode(None, HuffmanNode(leaves[1].l_data), HuffmanNode(leaves[1].r_data))
+    output.left = HuffmanNode(None, HuffmanNode(leaves[0].l_data), \
+                              HuffmanNode(leaves[0].r_data))
+    output.right = HuffmanNode(None, HuffmanNode(leaves[1].l_data), \
+                               HuffmanNode(leaves[1].r_data))
     
     return output
 
@@ -637,7 +642,7 @@ def improve_tree(tree, freq_dict):
     """
     # todo
 
-if __name__ == "__main__":
+#if __name__ == "__main__":
     
     #a = HuffmanNode('A')
     #a.number = 2
@@ -650,23 +655,23 @@ if __name__ == "__main__":
     #d = HuffmanNode('D')
     #d.number = 2    
     #nodes = [a,e,d,c,b]
-    fd = {'a':0, 'b':2, 'c': 2, 'd': 2, 'e':1, 'f':4, 'g':5}
-    a = huffman_tree2(fd)
-    b = HuffmanNode(None)
-    b.left = HuffmanNode(None)
-    b.left.left = HuffmanNode(None)
-    b.left.left.left = HuffmanNode('e')
-    b.left.left.right = HuffmanNode('c')
-    b.left.right = HuffmanNode(None)
-    b.left.right.left = HuffmanNode('b')
-    b.left.right.right = HuffmanNode('d')
-    b.right = HuffmanNode(None)
-    b.right.left = HuffmanNode('f')
-    b.right.right = HuffmanNode('g')    
+#    fd = {'a':0, 'b':2, 'c': 2, 'd': 2, 'e':1, 'f':4, 'g':5}
+    #a = huffman_tree2(fd)
+    #b = HuffmanNode(None)
+    #b.left = HuffmanNode(None)
+    #b.left.left = HuffmanNode(None)
+    #b.left.left.left = HuffmanNode('e')
+    #b.left.left.right = HuffmanNode('c')
+    #b.left.right = HuffmanNode(None)
+    #b.left.right.left = HuffmanNode('b')
+    #b.left.right.right = HuffmanNode('d')
+    #b.right = HuffmanNode(None)
+    #b.right.left = HuffmanNode('f')
+    #b.right.right = HuffmanNode('g')    
     
     
-    print(avg_length(a, fd))
-    print(avg_length(b, fd))
+    #print(avg_length(a, fd))
+   # print(avg_length(b, fd))
     
    # lst = [ReadNode(0, 5, 0, 7), ReadNode(0, 10, 0, 12)]
     #lst.append(ReadNode(1, 1, 1, 0))
