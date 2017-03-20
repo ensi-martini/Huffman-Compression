@@ -601,18 +601,91 @@ def generate_tree_postorder(node_lst, root_index):
 HuffmanNode(7, None, None)), \
 HuffmanNode(None, HuffmanNode(10, None, None), HuffmanNode(12, None, None)))
     """
-    # todo
+    
+    nodes = node_lst[:]
+    
+    root = nodes[root_index]
+    
+    #We know that each index is the postorder equivalent of the parent at that 
+    #subtree
+    
+    #We also know that the root's right child, if it is a subtree, has a root 
+    #with a postorder value of root_index - 1
+    
+    #The root node will always be the last one, in postorder
+    
+    #We cannot use the l_data or r_data properties for internals
+    
+    root_node = HuffmanNode('{}:{}'.format('N',root_index))
+    
+    if root.r_type == 1:
+        
+        root_node.right = generate_tree_postorder(nodes[:-1], root_index - 1)
+        
+    else:
+        root_node.right = HuffmanNode(root.r_data)
+        
+    #After we have reached the end of the right side, the 
+    #next found one on the left will be the one before in the postorder repr
+    
+    if root.l_type == 1:
+        
+        #Ok so here is where i get stuck: we know that we can keep decreasing
+        #the postorder number, problem is that we dont know how many were
+        #already added on the right subtree so we dont know where to splice
+        #the list. We could make a helper function that counts the number of 
+        #internals and subtracts that
+        
+        #print(root_node)
+        internals = count_internals(root_node)
+        root_node.left = generate_tree_postorder(nodes[:-1 * internals], \
+                                                 root_index - 1 - internals)
+        
+    else:
+        root_node.left = HuffmanNode(root.l_data)
+        
+    return root_node
+        
+def count_internals(t):
+    
+    total = 0
+    
+    if t:
+        
+        if t.left and t.left.left and t.left.right:
+            total += count_internals(t.left) + 1
+            
+        if t.right and t.right.left and t.right.right:
+            total += count_internals(t.right) + 1
+            
+    return total
+            
+    
+    
+    
+    
+    
 
 
 def generate_uncompressed(tree, text, size):
     """ Use Huffman tree to decompress size bytes from text.
 
     @param HuffmanNode tree: a HuffmanNode tree rooted at 'tree'
-    @param bytes text: text to decompress
+    @param bytes text: text to decompressd
     @param int size: how many bytes to decompress from text.
     @rtype: bytes
     """
-    # todo
+    
+    codes = get_codes(tree)
+    inverse_codes = {value: key for key, value in codes.items()}
+
+    bit_form = ''
+    
+    for b in text:
+        bit_form += byte_to_bits(b)
+        
+    
+    
 
 
 def bytes_to_nodes(buf):
@@ -688,7 +761,30 @@ def improve_tree(tree, freq_dict):
     """
     # todo
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
+    
+    #nodes = [ReadNode(0,1,0,2), ReadNode(0,2,1,0), ReadNode(0,3,0,4), ReadNode(1,0,1,0)]
+    #a = generate_tree_postorder(nodes, 3)    
+    #print(a)
+    
+    bb = HuffmanNode()
+    bb.left = HuffmanNode()
+    bb.left.right = HuffmanNode('b')
+    bb.left.left = HuffmanNode()
+    bb.left.left.left = HuffmanNode('i')
+    bb.left.left.right = HuffmanNode('l')
+    bb.right = HuffmanNode()
+    bb.right.left = HuffmanNode()
+    bb.right.left.left = HuffmanNode('w')
+    bb.right.left.right = HuffmanNode()
+    bb.right.left.right.left = HuffmanNode('u')
+    bb.right.left.right.right = HuffmanNode('t')
+    bb.right.right = HuffmanNode()
+    bb.right.right.left = HuffmanNode('o')
+    bb.right.right.right = HuffmanNode('r')
+    
+    
+    #fd = {'b':'01', 'i':'000', 'l':'001', 'o':'110', 'r':'111', 'w':'100', 'u':'1010', 't':'1011'}
     
     #a = HuffmanNode('A')
     #a.number = 2
