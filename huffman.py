@@ -180,7 +180,7 @@ def get_codes(tree):
         
         if tree.left:
             
-            if tree.left.symbol:
+            if tree.left.symbol != None:
                 output[tree.left.symbol] = _get_codes(tree, tree.left.symbol)
 
             else:
@@ -193,7 +193,7 @@ def get_codes(tree):
             
         if tree.right:
         
-            if tree.right.symbol:
+            if tree.right.symbol != None:
                 output[tree.right.symbol] = _get_codes(tree, tree.right.symbol)
                 
             else:
@@ -328,7 +328,10 @@ def generate_compressed(text, codes):
 
     lines = []    
     cache = {}
+    print("CODES:")
+    print(codes)
 
+    
     for t in text:
         lines.append(codes[t])
         
@@ -342,7 +345,7 @@ def generate_compressed(text, codes):
     
     output = []
     
-    for i in range(0, length + remaining, 8):
+    for i in range(0, length + remainder, 8):
         current = compressed[i:i + 8]
         
         if current not in cache:
@@ -757,13 +760,53 @@ def improve_tree(tree, freq_dict):
     >>> avg_length(tree, freq)
     2.31
     """
-    # todo
+    def _heightn(tree, symbol, height=0):
+    
+        if not tree:
+            return 0
+    
+        if tree.symbol == symbol:
+            return height
+    
+        level = _heightn(tree.left, symbol, height+1)
+        
+        if level != 0:
+            return level
+    
+        return _heightn(tree.right, symbol, height+1)
+    
+    klst = []
+    vlst = []
+    hlst = []
+    
+    for key in freq_dict:
+        klst.append(key)
+        vlst.append(freq_dict[key])
+        hlst.append(_heightn(tree,key))
+        
+    return [klst, vlst, hlst]
+
 
 if __name__ == "__main__":
-    #cProfile.run('compress("b.txt", "b.txt.huf")')
-    cProfile.run('uncompress("b.txt.huf", "out.txt")')
     
+    #left = HuffmanNode(None, HuffmanNode(99), HuffmanNode(100))
+    #right = HuffmanNode(None, HuffmanNode(101), \
+    #    HuffmanNode(None, HuffmanNode(97), HuffmanNode(98)))
     
+    #tree = HuffmanNode(None, left, right)
+    
+    #freq = {97: 26, 98: 23, 99: 20, 100: 16, 101: 15}
+    
+    #print(improve_tree(tree, freq))
+    cProfile.run('compress("music.mp3", "mptree.huf")')
+    cProfile.run('uncompress("mptree.huf", "YSV.mp3")')
+    
+    #ht = HuffmanNode()
+    #ht.left = HuffmanNode(0)
+    #ht.right = HuffmanNode()
+    #ht.right.left = HuffmanNode(10)
+    #ht.right.right = HuffmanNode(11)
+    #print(get_codes(ht))
     
     #import python_ta
     #python_ta.check_all(config="huffman_pyta.txt")
@@ -779,12 +822,9 @@ if __name__ == "__main__":
         #start = time.time()
         #compress(fname, fname + ".huf")
         #print("compressed {} in {} seconds."
-              #.format(fname, time.time() - start))
+        #.format(fname, time.time() - start))
     #elif mode == "u":
         #fname = input("File to uncompress: ")
         #start = time.time()
         #uncompress(fname, fname + ".orig")
-        #print("uncompressed {} in {} seconds."
-              #.format(fname, time.time() - start))
-    
-    
+        #print("uncompressed {} in {} seconds.".format(fname, time.time() - start))
