@@ -3,6 +3,8 @@ Code for compressing and decompressing using Huffman compression.
 """
 
 from nodes import HuffmanNode, ReadNode
+import cProfile
+import pstats
 
 
 # ====================
@@ -324,24 +326,42 @@ def generate_compressed(text, codes):
     ['10111001', '10000000']
     """
 
-    compressed = ''
-    
-    for t in text:
-        
-        compressed += d[int(str(t))]
+    lines = []    
+    cache = {}
 
+    for t in text:
+        lines.append(codes[t])
+        
+    compressed = ''.join(lines)
+    length = len(compressed)
+    remainder = ( length % 8)  * -1
+    remaining = compressed[remainder:]
+    compressed = compressed[:remainder]
+    #IMPROVEMENTS:
+    #Check last byte using lambda
+    
     output = []
     
-    while len(compressed) >= 8:
+    for i in range(0, length + remaining, 8):
+        current = compressed[i:i + 8]
         
-        output.append(bits_to_byte(compressed[:8]))
-        compressed = compressed[8:]
+        if current not in cache:
+            cache[current] = bits_to_byte(current)
+        output.append(cache[current])
+    
+    print('done for loop!')
+
+    if remaining != '':
         
-    if compressed != '':
-        output.append(bits_to_byte('{:0<8s}'.format(compressed)))
+        remaining = '{:0<8s}'.format(remaining)
         
+        if remaining in cache:
+            output.append(cache[remaining])
+            
+        else:
+            output.append(bits_to_byte('{:0<8s}'.format(remaining)))
+
     return bytes(output)
-        
 
 def tree_to_bytes(tree):
     """ Return a bytes representation of the tree rooted at tree.
@@ -379,7 +399,7 @@ def tree_to_bytes(tree):
     ordered = _tree_to_bytes(tree)
     
     for o in ordered:
-        print(o)
+        #print(o)
         
         #If our left is a leaf node
         if o.left and (not o.left.left and not o.left.right):
@@ -401,7 +421,7 @@ def tree_to_bytes(tree):
             output.append(1)
             output.append(o.right.number)
             
-    return output
+    return bytes(output)
     
 def _tree_to_bytes(tree): #Return a postorder list of None nodes in tree
      
@@ -444,100 +464,35 @@ def compress(in_file, out_file):
     with open(in_file, "rb") as f1:
         text = f1.read()
     freq = make_freq_dict(text)
+    print('done freq!')
     tree = huffman_tree(freq)
+    print('done huff_tree!')
     codes = get_codes(tree)
+    print('done codes!')
     number_nodes(tree)
+    print('done num_nodes!')
     print("Bits per symbol:", avg_length(tree, freq))
-    result = (num_nodes_to_bytes(tree) + tree_to_bytes(tree) +
-              size_to_bytes(len(text)))
+    #result = (num_nodes_to_bytes(tree) + tree_to_bytes(tree) +
+     #         size_to_bytes(len(text)))
+    r1 = num_nodes_to_bytes(tree)
+    print('done num_nodes to bytes!')
+    r2 = tree_to_bytes(tree)
+    print('done tree to bytes!')
+    r3 = size_to_bytes(len(text))
+    print('done size to bytes!')
+    result = (r1 + r2 + r3)
     result += generate_compressed(text, codes)
+    print('done generate_compressed')
     with open(out_file, "wb") as f2:
         f2.write(result)
 
+    print('done!')
 
 # ====================
 # Functions for decompression
 
 
 def generate_tree_general(node_lst, root_index):
-    """ Return the root of the Huffman tree corresponding
-    to node_lst[root_index].
-
-    The function assumes nothing about the order of the nodes in the list.
-
-    @param list[ReadNode] node_lst: a list of ReadNode objects
-    @param int root_index: index in the node list
-    @rtype: HuffmanNode
-
-    >>> lst = [ReadNode(0, 5, 0, 7), ReadNode(0, 10, 0, 12)]
-    >>> lst.append(ReadNode(1, 1, 1, 0))
-    >>> a = generate_tree_general(lst, 2)
-    >>> b = HuffmanNode()
-    >>> b.right = HuffmanNode(None, HuffmanNode(10), HuffmanNode(12))
-    >>> b.left = HuffmanNode(None, HuffmanNode(5), HuffmanNode(7))
-    >>> a == b
-    True
-    """
-    
-    nl = node_lst[:]
-    
-    #We want to split all the subtrees we have into three catagories:
-    #root, leaves, and internals
-    tree_lst = []
-    leaves = []    
-    root = nl.pop(root_index)
-    
-    for rn in nl:
-        
-        if rn.l_type == 0 and rn.r_type == 0:
-            leaves.append(rn)
-
-    for x in range(len(leaves)):        
-        nl.remove(leaves[x])
-        
-    internals = []
-    
-    #Now we only have internal nodes left
-    for rn in nl:
-        
-        t = HuffmanNode()
-        
-        if rn.l_type == 0:            
-            t.left = HuffmanNode(rn.l_data)
-            
-        elif rn.l_type:
-            
-            t.left = HuffmanNode()
-            t.left.left = HuffmanNode(leaves[0].l_data)
-            t.left.right = HuffmanNode(leaves[0].r_data)
-            leaves.pop(0)
-            
-        if rn.r_type == 0:            
-            t.right = HuffmanNode(rn.r_data)
-            
-        elif rn.r_type:
-            
-            t.right = HuffmanNode()
-            t.right.left = HuffmanNode(leaves[0].l_data)
-            t.right.right = HuffmanNode(leaves[0].r_data)                
-            leaves.pop(0)
-            
-        internals.append(t)
-        
-    #We should now have no items left in tree_lst, as they were all randomly
-    #Assigned as children to the internals
-    if internals != []:
-        return HuffmanNode(None, internals[0], internals[1])
-    
-    output = HuffmanNode()
-    output.left = HuffmanNode(None, HuffmanNode(leaves[0].l_data), \
-                              HuffmanNode(leaves[0].r_data))
-    output.right = HuffmanNode(None, HuffmanNode(leaves[1].l_data), \
-                               HuffmanNode(leaves[1].r_data))
-    
-    return output
-
-def generate_tree_general2(node_lst, root_index):
     """ Return the root of the Huffman tree corresponding
     to node_lst[root_index].
 
@@ -570,13 +525,13 @@ def generate_tree_general2(node_lst, root_index):
     root_node = HuffmanNode()
     
     if root.l_type == 1:
-        root_node.left = generate_tree_general2(nodes, root.l_data)
+        root_node.left = generate_tree_general(nodes, root.l_data)
         
     else:
         root_node.left = HuffmanNode(root.l_data)
         
     if root.r_type == 1:
-        root_node.right = generate_tree_general2(nodes, root.r_data)
+        root_node.right = generate_tree_general(nodes, root.r_data)
     
     else:
         root_node.right = HuffmanNode(root.r_data)
@@ -660,13 +615,6 @@ def count_internals(t):
             
     return total
             
-    
-    
-    
-    
-    
-
-
 def generate_uncompressed(tree, text, size):
     """ Use Huffman tree to decompress size bytes from text.
 
@@ -676,13 +624,45 @@ def generate_uncompressed(tree, text, size):
     @rtype: bytes
     """
     
+    #We take a tree, compressed bytes like the output in our generate_compressed
+    #and a number of items to decode, to avoid adding padding to output
+    
+    
     codes = get_codes(tree)
+    print('done get_codes!')
     inverse_codes = {value: key for key, value in codes.items()}
 
-    bit_form = ''
+    bit_form = []
+    cache = {}
     
     for b in text:
-        bit_form += byte_to_bits(b)
+        if b not in cache:
+            cache[b] = byte_to_bits(b)
+        bit_form.append(cache[b])
+        
+    bit_form = ''.join(bit_form)
+    
+    print('done first for loop!')
+    output = []
+    
+    for char in range(size):
+        
+        key = bit_form[0]
+        counter = 0
+        
+        while key not in inverse_codes:
+            counter += 1
+            key += bit_form[counter]
+            
+        bit_form = bit_form[counter + 1:]
+            
+        output.append(inverse_codes[key])
+        
+    print('done second loop!')
+    return bytes(output)
+    
+    
+            
         
     
     
@@ -731,12 +711,29 @@ def uncompress(in_file, out_file):
         num_nodes = f.read(1)[0]
         buf = f.read(num_nodes * 4)
         node_lst = bytes_to_nodes(buf)
+        print('done bytes_to_nodes!')
+        #print(node_lst)
+        print()
         # use generate_tree_general or generate_tree_postorder here
         tree = generate_tree_general(node_lst, num_nodes - 1)
+        print('done generate_tree_general!')
+        #print(tree)
+        print()
         size = bytes_to_size(f.read(4))
+        print('done bytes_to_size!')
+        #print(size)
+        print()
         with open(out_file, "wb") as g:
             text = f.read()
-            g.write(generate_uncompressed(tree, text, size))
+            #print(tree)
+            #print(text)
+            #print(size)
+            something = generate_uncompressed(tree, text, size)
+            
+            print(something == None)
+            g.write(something)
+            
+        print('done!')
 
 
 # ====================
@@ -761,119 +758,9 @@ def improve_tree(tree, freq_dict):
     """
     # todo
 
-if __name__ == "__main__":
-    
-    #nodes = [ReadNode(0,1,0,2), ReadNode(0,2,1,0), ReadNode(0,3,0,4), ReadNode(1,0,1,0)]
-    #a = generate_tree_postorder(nodes, 3)    
-    #print(a)
-    
-    bb = HuffmanNode()
-    bb.left = HuffmanNode()
-    bb.left.right = HuffmanNode('b')
-    bb.left.left = HuffmanNode()
-    bb.left.left.left = HuffmanNode('i')
-    bb.left.left.right = HuffmanNode('l')
-    bb.right = HuffmanNode()
-    bb.right.left = HuffmanNode()
-    bb.right.left.left = HuffmanNode('w')
-    bb.right.left.right = HuffmanNode()
-    bb.right.left.right.left = HuffmanNode('u')
-    bb.right.left.right.right = HuffmanNode('t')
-    bb.right.right = HuffmanNode()
-    bb.right.right.left = HuffmanNode('o')
-    bb.right.right.right = HuffmanNode('r')
-    
-    
-    #fd = {'b':'01', 'i':'000', 'l':'001', 'o':'110', 'r':'111', 'w':'100', 'u':'1010', 't':'1011'}
-    
-    #a = HuffmanNode('A')
-    #a.number = 2
-    #e = HuffmanNode("E")
-    #e.number = 3
-    #b = HuffmanNode('B')
-    #b.number = 2
-    #c = HuffmanNode('C')
-    #c.number = 2
-    #d = HuffmanNode('D')
-    #d.number = 2    
-    #nodes = [a,e,d,c,b]
-#    fd = {'a':0, 'b':2, 'c': 2, 'd': 2, 'e':1, 'f':4, 'g':5}
-    #a = huffman_tree2(fd)
-    #b = HuffmanNode(None)
-    #b.left = HuffmanNode(None)
-    #b.left.left = HuffmanNode(None)
-    #b.left.left.left = HuffmanNode('e')
-    #b.left.left.right = HuffmanNode('c')
-    #b.left.right = HuffmanNode(None)
-    #b.left.right.left = HuffmanNode('b')
-    #b.left.right.right = HuffmanNode('d')
-    #b.right = HuffmanNode(None)
-    #b.right.left = HuffmanNode('f')
-    #b.right.right = HuffmanNode('g')    
-    
-    
-    #print(avg_length(a, fd))
-   # print(avg_length(b, fd))
-    
-   # lst = [ReadNode(0, 5, 0, 7), ReadNode(0, 10, 0, 12)]
-    #lst.append(ReadNode(1, 1, 1, 0))
-    #a = generate_tree_general(lst, 2)    
-    #rn_lst = [ReadNode(None,None,1,3), ReadNode(0,3,1,5), ReadNode(0,4,0,5), ReadNode(1,2,1,1), ReadNode(0,1,0,2)]
-    #a = _tester_GNG(rn_lst, 3)
-    
-    
-    
-    #fd = {'a':2, 'b':3, 'c':4}
-    #hn = huffman_tree(fd)
-    #print(hn.symbol == None and hn.number == 9 and hn.left.symbol == 'c' and 
-          #hn.left.number == 4 and hn.right.symbol == None and hn.right.number ==
-          #5 and hn.right.left.symbol == 'a' and hn.right.left.number == 2 and
-          #hn.right.right.symbol == 'b' and hn.right.right.number == 3)
-    
-    #d = {0: "0", 1: "10", 2: "11"}
-    #text = bytes([1, 2, 1, 0])   
-    #result = generate_compressed(text, d)    
-    
-    #left = HuffmanNode(None, HuffmanNode(3), HuffmanNode(2))
-    #right = HuffmanNode(5)
-    #tree = HuffmanNode(None, left, right)
-    #number_nodes(tree)
-    #print(tree_to_bytes(tree))
-                        
-    #tree = HuffmanNode(None, HuffmanNode(t3), HuffmanNode(2))
-    #number_nodes(tree)
-    #print(tree_to_bytes(tree))    
-    
-    #tree1 = HuffmanNode(None)
-    #tree1.left = HuffmanNode(None)
-    #tree1.left.left = HuffmanNode(3)
-    #tree1.left.right = HuffmanNode(None)
-    #tree1.left.right.left = HuffmanNode(1)
-    #tree1.left.right.right = HuffmanNode(2)
-    #tree1.right = HuffmanNode(None)
-    #tree1.right.right = HuffmanNode(None)
-    #tree1.right.right.left = HuffmanNode(4)
-    #tree1.right.right.right = HuffmanNode(5)
-    #number_nodes(tree1)
-    #print(tree_to_bytes(tree1))
-    
-    
-    
-    #fd2 = {'a':2}
-    #hn2 = huffman_tree(fd2)
-    
-    
-    #b = HuffmanNode()
-    #b.left = HuffmanNode('c')
-    #b.right = HuffmanNode()
-    #b.right.left = HuffmanNode()
-    #b.right.left.left = HuffmanNode('a')
-    #print( _get_codes(b, 'a') == '100')
-    
-    
-    
-    
-    
+#if __name__ == "__main__":
+    #cProfile.run('compress("b.txt", "b.txt.huf")')
+    #cProfile.run('uncompress("b.txt.huf", "out.txt")')
     
     
     
