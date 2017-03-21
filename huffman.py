@@ -630,10 +630,12 @@ def generate_uncompressed(tree, text, size):
     
     codes = get_codes(tree)
     print('done get_codes!')
+    
     inverse_codes = {value: key for key, value in codes.items()}
 
     bit_form = []
     cache = {}
+    output = []
     
     for b in text:
         if b not in cache:
@@ -642,31 +644,30 @@ def generate_uncompressed(tree, text, size):
         
     bit_form = ''.join(bit_form)
     
-    print('done first for loop!')
+    print('done second for loop!')
     output = []
     
-    for char in range(size):
+    check_from = 0
+    check_to = 1
+    found = 0
+    print(size)
+    
+    while found < size:
         
-        key = bit_form[0]
-        counter = 0
+        checker = bit_form[check_from:check_to]
         
-        while key not in inverse_codes:
-            counter += 1
-            key += bit_form[counter]
+        if checker in inverse_codes:
             
-        bit_form = bit_form[counter + 1:]
+            output.append(inverse_codes[checker])
+            check_from = check_to
+            found += 1
             
-        output.append(inverse_codes[key])
-        
-    print('done second loop!')
-    return bytes(output)
-    
-    
+        check_to += 1
             
-        
-    
-    
 
+    print('done function!')
+        
+    return bytes(output)
 
 def bytes_to_nodes(buf):
     """ Return a list of ReadNodes corresponding to the bytes in buf.
@@ -758,9 +759,9 @@ def improve_tree(tree, freq_dict):
     """
     # todo
 
-#if __name__ == "__main__":
+if __name__ == "__main__":
     #cProfile.run('compress("b.txt", "b.txt.huf")')
-    #cProfile.run('uncompress("b.txt.huf", "out.txt")')
+    cProfile.run('uncompress("b.txt.huf", "out.txt")')
     
     
     
