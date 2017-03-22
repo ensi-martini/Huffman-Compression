@@ -655,8 +655,6 @@ def generate_uncompressed(tree, text, size):
             
         check_to += 1
             
-
-    #print('done function!')
         
     return bytes(output)
 
@@ -730,77 +728,41 @@ def improve_tree(tree, freq_dict):
     >>> improve_tree(tree, freq)
     >>> avg_length(tree, freq)
     2.31
-    """
-    def _heightn(tree, symbol, height=0):
+    #"""
+
+    def reassign(t, properties):
+        if t:
+            
+            if t.left and t.left.is_leaf():
+                t.left.symbol = properties.pop(0)
+                
+            elif t.left:
+                t.left = reassign(t.left, properties)
+                
+            if t.right and t.right.is_leaf():
+                t.right.symbol = properties.pop(0)
+                
+            elif t.right:
+                t.right = reassign(t.right, properties)
+                
+            return t
     
-        if not tree:
-            return 0
+
+    info = []
     
-        if tree.symbol == symbol:
-            return height
+    for key in freq_dict: #We appends occurances and symbols as a tuple
+        info.append((freq_dict[key], key))
     
-        level = _heightn(tree.left, symbol, height+1)
+    #We sort it based on the
+    kv = sorted(info, reverse=True)
+    kv = [x[1] for x in kv]
+    
+    return reassign(tree, kv)
         
-        if level != 0:
-            return level
+
     
-        return _heightn(tree.right, symbol, height+1)
-    
-    klst = []
-    vlst = []
-    hlst = []
-    
-    for key in freq_dict:
-        klst.append(key)
-        vlst.append(freq_dict[key])
-        hlst.append(_heightn(tree,key))
-        
     '''
-    
-    == Version 1 ==
-    Take each leaf node x and compare it with every other leaf node y.
-    We want to:
-        a. Take this node and check it against the the nodes that have a height
-           that is equal to the height of tree. If x.frequency < y.frequency.
-           We want to swap those nodes.
-        b. We want to keep repeating this until we ensure that the the y nodes
-           that have a depth equivalent to the tree have the lowest frequencies.
-        c. By ensuring this, we know that the leaf nodes on that level are the
-           lowest frequencies and therefore do not have to check against these
-           nodes again.
-        d. Since we do not want to check against these nodes again, we simply
-           check against the nodes that have a height smaller than the previous
-           height we were working with by 1.
-    
-    - This was the first thing that came through my head.
-    - Don't know if this'll actually fuck up or not.
-    
-    == Version 2 == 
-    Another way that I've been thinking of doing this is we:
-    
-    With every node swap, we'll have 2 average lengths. One of the original. 
-    We'll name this avg_o. And the other of the average length after the node 
-    swap. We'll name this avg_swap.
-    
-        a. Perform a node swap with any random node. 
-        b. Then we check:
-           1. If the the avg_swap < avg_o. This means we've made a more optimal
-              tree! Switch avg_o = avg_swap so we have a new average length to
-              compare it with. Start from a now.
-           2. If avg_swap > avg_o. This means we've made it less optimal. We
-              don't want this so don't actually make the swap and start from the
-              top!
-           3. If avg_swap == avg_o. I'll be honest, this can mean one of two.
-              This can mean that we've hit the most optimal tree and every swap
-              after will only result in avg_swap > avg_o, or we just so happened
-              to switch two nodes that haven't really changed it to a suboptimal
-              tree.
-    
-    - This is sort of a brute force and can result in it being very inefficient.
-    - I think the hardest part will picking the random nodes. I don't think it
-      has to be random, just with the next closest node maybe?
-      
-      
+
     == Version 3 == 
     Take all the leaf nodes of the tree and replace them with none but still
     keep them as leaves. With these nodes we can use an ADT to store them
@@ -826,27 +788,24 @@ def improve_tree(tree, freq_dict):
            
     - A problem we may encounter is knowing when to go up a level, how we know
       when we the depth is full on either sub tree, and things similar to this.
-      
-
-    
-    
     '''
         
     
 
 if __name__ == "__main__":
     
-    #left = HuffmanNode(None, HuffmanNode(99), HuffmanNode(100))
-    #right = HuffmanNode(None, HuffmanNode(101), \
-    #    HuffmanNode(None, HuffmanNode(97), HuffmanNode(98)))
+    left = HuffmanNode(None, HuffmanNode(99), HuffmanNode(100))
+    right = HuffmanNode(None, HuffmanNode(101), \
+       HuffmanNode(None, HuffmanNode(97), HuffmanNode(98)))
     
-    #tree = HuffmanNode(None, left, right)
+    tree = HuffmanNode(None, left, right)
     
-    #freq = {97: 26, 98: 23, 99: 20, 100: 16, 101: 15}
-    
-    #print(improve_tree(tree, freq))
-    cProfile.run('compress("b.txt", "b.huf")')
-    cProfile.run('uncompress("b.huf", "output.txt")')
+    freq = {97: 26, 98: 23, 99: 20, 100: 16, 101: 15}
+    print(avg_length(tree, freq))
+    improve_tree(tree, freq)
+    print(avg_length(tree, freq))
+    #cProfile.run('compress("b.txt", "b.huf")')
+    #cProfile.run('uncompress("b.huf", "output.txt")')
     
     #ht = HuffmanNode()
     #ht.left = HuffmanNode(0)
