@@ -328,10 +328,7 @@ def generate_compressed(text, codes):
 
     lines = []    
     cache = {}
-    print("CODES:")
-    print(codes)
 
-    
     for t in text:
         lines.append(codes[t])
         
@@ -351,8 +348,6 @@ def generate_compressed(text, codes):
         if current not in cache:
             cache[current] = bits_to_byte(current)
         output.append(cache[current])
-    
-    print('done for loop!')
 
     if remaining != '':
         
@@ -467,29 +462,22 @@ def compress(in_file, out_file):
     with open(in_file, "rb") as f1:
         text = f1.read()
     freq = make_freq_dict(text)
-    print('done freq!')
+
     tree = huffman_tree(freq)
-    print('done huff_tree!')
+
     codes = get_codes(tree)
-    print('done codes!')
+
     number_nodes(tree)
-    print('done num_nodes!')
+
     print("Bits per symbol:", avg_length(tree, freq))
-    #result = (num_nodes_to_bytes(tree) + tree_to_bytes(tree) +
-     #         size_to_bytes(len(text)))
-    r1 = num_nodes_to_bytes(tree)
-    print('done num_nodes to bytes!')
-    r2 = tree_to_bytes(tree)
-    print('done tree to bytes!')
-    r3 = size_to_bytes(len(text))
-    print('done size to bytes!')
-    result = (r1 + r2 + r3)
+    result = (num_nodes_to_bytes(tree) + tree_to_bytes(tree) +
+             size_to_bytes(len(text)))
     result += generate_compressed(text, codes)
-    print('done generate_compressed')
+
     with open(out_file, "wb") as f2:
         f2.write(result)
 
-    print('done!')
+
 
 # ====================
 # Functions for decompression
@@ -632,7 +620,7 @@ def generate_uncompressed(tree, text, size):
     
     
     codes = get_codes(tree)
-    print('done get_codes!')
+
     
     inverse_codes = {value: key for key, value in codes.items()}
 
@@ -647,13 +635,13 @@ def generate_uncompressed(tree, text, size):
         
     bit_form = ''.join(bit_form)
     
-    print('done second for loop!')
+
     output = []
     
     check_from = 0
     check_to = 1
     found = 0
-    print(size)
+
     
     while found < size:
         
@@ -668,7 +656,7 @@ def generate_uncompressed(tree, text, size):
         check_to += 1
             
 
-    print('done function!')
+    #print('done function!')
         
     return bytes(output)
 
@@ -715,31 +703,14 @@ def uncompress(in_file, out_file):
         num_nodes = f.read(1)[0]
         buf = f.read(num_nodes * 4)
         node_lst = bytes_to_nodes(buf)
-        print('done bytes_to_nodes!')
-        #print(node_lst)
-        print()
         # use generate_tree_general or generate_tree_postorder here
         tree = generate_tree_general(node_lst, num_nodes - 1)
-        print('done generate_tree_general!')
-        #print(tree)
-        print()
         size = bytes_to_size(f.read(4))
-        print('done bytes_to_size!')
-        #print(size)
-        print()
         with open(out_file, "wb") as g:
             text = f.read()
-            #print(tree)
-            #print(text)
-            #print(size)
             something = generate_uncompressed(tree, text, size)
-            
-            print(something == None)
             g.write(something)
             
-        print('done!')
-
-
 # ====================
 # Other functions
 
@@ -798,8 +769,8 @@ if __name__ == "__main__":
     #freq = {97: 26, 98: 23, 99: 20, 100: 16, 101: 15}
     
     #print(improve_tree(tree, freq))
-    cProfile.run('compress("music.mp3", "mptree.huf")')
-    cProfile.run('uncompress("mptree.huf", "YSV.mp3")')
+    cProfile.run('compress("b.txt", "b.huf")')
+    cProfile.run('uncompress("b.huf", "output.txt")')
     
     #ht = HuffmanNode()
     #ht.left = HuffmanNode(0)
