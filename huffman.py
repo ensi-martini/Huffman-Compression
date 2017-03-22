@@ -755,8 +755,84 @@ def improve_tree(tree, freq_dict):
         vlst.append(freq_dict[key])
         hlst.append(_heightn(tree,key))
         
-    return [klst, vlst, hlst]
+    '''
+    
+    == Version 1 ==
+    Take each leaf node x and compare it with every other leaf node y.
+    We want to:
+        a. Take this node and check it against the the nodes that have a height
+           that is equal to the height of tree. If x.frequency < y.frequency.
+           We want to swap those nodes.
+        b. We want to keep repeating this until we ensure that the the y nodes
+           that have a depth equivalent to the tree have the lowest frequencies.
+        c. By ensuring this, we know that the leaf nodes on that level are the
+           lowest frequencies and therefore do not have to check against these
+           nodes again.
+        d. Since we do not want to check against these nodes again, we simply
+           check against the nodes that have a height smaller than the previous
+           height we were working with by 1.
+    
+    - This was the first thing that came through my head.
+    - Don't know if this'll actually fuck up or not.
+    
+    == Version 2 == 
+    Another way that I've been thinking of doing this is we:
+    
+    With every node swap, we'll have 2 average lengths. One of the original. 
+    We'll name this avg_o. And the other of the average length after the node 
+    swap. We'll name this avg_swap.
+    
+        a. Perform a node swap with any random node. 
+        b. Then we check:
+           1. If the the avg_swap < avg_o. This means we've made a more optimal
+              tree! Switch avg_o = avg_swap so we have a new average length to
+              compare it with. Start from a now.
+           2. If avg_swap > avg_o. This means we've made it less optimal. We
+              don't want this so don't actually make the swap and start from the
+              top!
+           3. If avg_swap == avg_o. I'll be honest, this can mean one of two.
+              This can mean that we've hit the most optimal tree and every swap
+              after will only result in avg_swap > avg_o, or we just so happened
+              to switch two nodes that haven't really changed it to a suboptimal
+              tree.
+    
+    - This is sort of a brute force and can result in it being very inefficient.
+    - I think the hardest part will picking the random nodes. I don't think it
+      has to be random, just with the next closest node maybe?
+      
+      
+    == Version 3 == 
+    Take all the leaf nodes of the tree and replace them with none but still
+    keep them as leaves. With these nodes we can use an ADT to store them
+    (let's say a Stack for this purpose.) With our stack, our bottom element
+    is the node with the highest frequency and the our top element is the node
+    with the lowest frequency. 
+    
+    By starting at the depth of the tree, we pop from our stack and then change
+    that none leaf to whatever element we popped out. We fill leaf nodes from 
+    the bottom up. We work 1 level at a time. Once all the leaf nodes of that 
+    one level is filled, we just work up a level. We keep going until our stack
+    is empty, this means our tree is filled.
+    
+    We know that:
+        1. Our tree retains the same structure, except all its leaf nodes become
+           None nodes aka HuffmanNode(None, None, None). So if we find a node
+           that is this, just replace with the top element of our stack.
+        2. The stack will guarantee that the top elements (lowest frequencies)
+           will appear at the bottom of the tree. This also takes care of ties,
+           because if a depth is full, we just work on the next level.
+        3. We don't have to swap nodes, simply take out all the nodes and
+           replace them accordingly.
+           
+    - A problem we may encounter is knowing when to go up a level, how we know
+      when we the depth is full on either sub tree, and things similar to this.
+      
 
+    
+    
+    '''
+        
+    
 
 if __name__ == "__main__":
     
