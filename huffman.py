@@ -72,7 +72,8 @@ def make_freq_dict(text):
     output_dict = {}
     
     for t in text:
-        
+    
+        #If this byte isn't in the dict, add it
         if t not in output_dict:
             output_dict[t] = 0
             
@@ -95,6 +96,7 @@ def huffman_tree(freq_dict):
     True
     """    
     
+    #We need to treat 1 item in the dict as a special case
     if len(freq_dict) >= 2:
         
         node_list = []
@@ -103,36 +105,47 @@ def huffman_tree(freq_dict):
         #number values
         for n in freq_dict:
 
-            #Letters that do not appear but are in the dict for some stupid
-            #reason do not get added
+            #Letters that do not appear but are in the dict do not get added
             if freq_dict[n] > 0:
+                
                 node = HuffmanNode(n)
-                node.number = freq_dict[n]
+                node.number = freq_dict[n] #We don't use a cache - unique keys
                 node_list.append(node)
                 
+        #Sort the nodes by their number attribute
         node_list.sort(key=lambda x: x.number)
         
         #After sorting from smallest to greatest occurances, iterate each time
         #and merge the two least frequent nodes together (could be internals)
+        #in an effort to build the list from the bottom up
+        
+        #This keeps going until only one item is left (the root)
         while len(node_list) > 1:
             
-            #Just for testing: REMOVE THIS LATER
-            #name = node_list[0].symbol + node_list[1].symbol
-                                       
+            #Create a node with children being two least frequent nodes                           
             current_node = HuffmanNode(None, node_list[0], node_list[1])
+            
+            #Set it's number value to be the sum of it's children
             current_node.number = node_list[0].number + node_list[1].number
             
+            #Now remove those two children from the consideration list
+            #(they are represented as a culmulative unit under the new node)
             node_list = node_list[2:] + [current_node]
+            
+            #Now we re-sort with our new node
             node_list.sort(key=lambda x: x.number)
             
+        #Once we have built the tree all the way up, we can return it's root
         return node_list[0]
         
+    #Special case - only one item in the dict
+        
+    #Create a empty root and set it's left to have a symbol and value of the
+    #only key and value in the dict, respectively
     root = HuffmanNode(None)
-    
-    if len(freq_dict) == 1:
-        left = HuffmanNode(max(freq_dict))
-        left.number = freq_dict[left.symbol]
-        root.left = left
+    left = HuffmanNode(max(freq_dict))
+    left.number = freq_dict[left.symbol]
+    root.left = left
     
     return root
     
@@ -152,85 +165,83 @@ def get_codes(tree):
         ''' Find n in t and return it's binary address, or empty string if it is
         not found
         '''
+        
+        
         address = ''
         
         if t:
-    
+            
+            #If the symbol we are looking for is on the left
             if t.left and t.left.symbol == n:
                 return '0'
             
+            #If it is on the right
             elif t.right and t.right.symbol == n:
                 return '1'
             
+            #If we have a left but it's not our symbol
             if t.left:
+                #Parse the children of the left node and check them for the same
+                #symbol
                 temp = _get_codes(t.left, n) 
+                
+                #If it finds it, it will have a binary value and we will know
+                #to add all the bits for the directions there from the root
                 if temp != '':
                     address += '0' + temp
             
+            #If we have a right but it's not our symbol
             if t.right:
+                #Parse the children of the left node and check them for the same
+                #symbol                
                 temp = _get_codes(t.right, n) 
+                
+                #If it finds it, it will have a binary value and we will know
+                #to add all the bits for the directions there from the root                
                 if temp != '':
                     address += '1' + temp             
-                
+            
         return address
     
     output = {}
     
+    
+    #Simply parse the tree and run the helper function on each node
     if tree:
         
         if tree.left:
             
-            if tree.left.symbol != None:
+            if tree.left.is_leaf(): #When we find a leaf, get that symbol's code
                 output[tree.left.symbol] = _get_codes(tree, tree.left.symbol)
 
             else:
+                #If its internal, repeat on the left subtree
                 temp = get_codes(tree.left)
                                 
-                for t in temp:
+                for t in temp: #Add leading 0 to take into account current level
                     temp[t] = '0' + temp[t]
                     
+                #Add all newly-created keys and values to our dict
+                #We don't have to worry about overwrites, each leaf is unique
                 output.update(temp)
             
-        if tree.right:
+        if tree.right: 
         
-            if tree.right.symbol != None:
+            if tree.right.is_leaf(): #If we find a leaf, get that symbol's code
                 output[tree.right.symbol] = _get_codes(tree, tree.right.symbol)
                 
             else:
+                #If its internal, repeat on the right subtree
                 temp = get_codes(tree.right)
                 
-                for t in temp:
+                for t in temp: #Add leading 1 to take into account current level
                     temp[t] = '1' + temp[t]
                     
+                #Add all newly-created keys and values to our dict
+                #We don't have to worry about overwrites, each leaf is unique                
                 output.update(temp) 
+                
     return output
-
-#test helper function
-def _get_codes(t, n):
-    ''' Find n in t and return it's binary address, or empty string if it is
-    not found
-    '''
-    address = ''
-    
-    if t:
-
-        if t.left and t.left.symbol == n:
-            return '0'
-        
-        elif t.right and t.right.symbol == n:
-            return '1'
-        
-        if t.left:
-            temp = _get_codes(t.left, n) 
-            if temp != '':
-                address += '0' + temp
-        
-        if t.right:
-            temp = _get_codes(t.right, n) 
-            if temp != '':
-                address += '1' + temp             
-            
-    return address
 
 
 def number_nodes(tree):
@@ -252,34 +263,26 @@ def number_nodes(tree):
     2
     """
     
-    #Do a postorder traversal of the tree.
-    #Assign the first internal node (node with children) the number 0.
-    #Every internal node found after is going to be assigned a number starting
-    #from 0.
-    #Reassign each 'None' or Internal Node, according to its postorder traversal
-    #position number.
-    
     def _internal_post(tree):
+        ''' Return a list of internal nodes, found in postorder
+        '''
         
-        #if we hit a leaf node
-        
-        if not tree or (not tree.left and not tree.right):
+        #if we hit a leaf node         
+        if not tree or tree.is_leaf():
             return []
         
+        #Similar to postorder parsing in class, but return list of HNodes  
+        #themselves instead of simply their symbols
         return _internal_post(tree.left) + _internal_post(tree.right) + [tree]
             
+    #Get the postorder list from the helper function
     internals = _internal_post(tree)
     
     for i in range(len(internals)):
-        
+        #We already have our list in postorder, now just set their number 
+        #attribute to match their index
         internals[i].number = i
 
-def _internal_post(tree):
-    
-    #if we hit a leaf node
-    if not tree or (not tree.left and not tree.right):
-        return []
-    return _internal_post(tree.left) + _internal_post(tree.right) + [tree]
 
 def avg_length(tree, freq_dict):
     """ Return the number of bits per symbol required to compress text
@@ -298,12 +301,13 @@ def avg_length(tree, freq_dict):
     """
     
     total = 0
+    #Divisor is total occurrences of all values
     divisor = sum(freq_dict.values())
     
-    code_dict = get_codes(tree)
+    code_dict = get_codes(tree) #Dict values give us the weight of each key
     
     for k in code_dict:
-        
+        #Add it based on the appropriate weight
         total += len(code_dict[k]) * freq_dict[k]
         
     return total / divisor
@@ -325,7 +329,7 @@ def generate_compressed(text, codes):
     >>> [byte_to_bits(byte) for byte in result]
     ['10111001', '10000000']
     """
-
+    #SIMPLIFY
     lines = []    
     cache = {}
 
@@ -334,11 +338,12 @@ def generate_compressed(text, codes):
         
     compressed = ''.join(lines)
     length = len(compressed)
-    remainder = ( length % 8)  * -1
-    remaining = compressed[remainder:]
-    compressed = compressed[:remainder]
-    #IMPROVEMENTS:
-    #Check last byte using lambda
+    remainder = 0
+    
+    if length % 8 != 0:
+        remainder = ( length % 8)  * -1
+        remaining = compressed[remainder:]
+        compressed = compressed[:remainder]
     
     output = []
     
@@ -349,7 +354,7 @@ def generate_compressed(text, codes):
             cache[current] = bits_to_byte(current)
         output.append(cache[current])
 
-    if remaining != '':
+    if length % 8 != 0:
         
         remaining = '{:0<8s}'.format(remaining)
         
@@ -385,48 +390,53 @@ def tree_to_bytes(tree):
     
     output = []
     
-    #Using postorder traversal, find the first None node
-    
-    def _tree_to_bytes(tree): #Return a postorder list of None nodes in tree
+    def _tree_to_bytes(tree):
+        '''
+        Return a postorder list of None nodes in tree
         
-        if not tree or (not tree.left and not tree.right):
+        '''
+        
+        #If we dont have a tree our we have a leaf node
+        if not tree or tree.is_leaf():
             return []
         
+        #Return a list of the postorder traversal of the nodes
         return _tree_to_bytes(tree.left) + _tree_to_bytes(tree.right) + [tree]
     
+    #Create a list that gives us a postorder traversal of the None nodes within
+    #our tree
     ordered = _tree_to_bytes(tree)
     
+    #For each None node in our ordered list
     for o in ordered:
-        #print(o)
         
-        #If our left is a leaf node
-        if o.left and (not o.left.left and not o.left.right):
+        
+        #If our left exists and is a leaf node, append a 0, 
+        #then append its symbol
+        if o.left and o.left.is_leaf():
             output.append(0)
-            
             output.append(o.left.symbol)
-            
+         
+        #Else if it is just an internal node, append a 1 and then the number
+        #that internal node has - its postorder number
         elif o.left:
             output.append(1)
-            
             output.append(o.left.number)
             
-        if o.right and (not o.right.left and not o.right.right):
-            
+        #If our right exists and is a leaf node, append a 0, 
+        #then append its symbol        
+        if o.right and o.right.is_leaf():
             output.append(0)
             output.append(o.right.symbol)
             
+        #Else if it is just an internal node, append a 1 and then the number
+        #that internal node has - its postorder number    
         elif o.right:
             output.append(1)
             output.append(o.right.number)
             
+    #Return a bytes object of our output list
     return bytes(output)
-    
-def _tree_to_bytes(tree): #Return a postorder list of None nodes in tree
-     
-    if not tree or (not tree.left and not tree.right):
-        return []
-     
-    return _internal_post(tree.left) + _internal_post(tree.right) + [tree]
     
 def num_nodes_to_bytes(tree):
     """ Return number of nodes required to represent tree (the root of a
@@ -493,34 +503,42 @@ def generate_tree_general(node_lst, root_index):
     @param int root_index: index in the node list
     @rtype: HuffmanNode
 
-    >>> lst = [ReadNode(0, 5, 0, 7), ReadNode(0, 10, 0, 12)]
-    >>> lst.append(ReadNode(1, 1, 1, 0))
-    >>> a = generate_tree_general(lst, 2)
-    >>> b = HuffmanNode()
-    >>> b.right = HuffmanNode(None, HuffmanNode(10), HuffmanNode(12))
-    >>> b.left = HuffmanNode(None, HuffmanNode(5), HuffmanNode(7))
-    >>> a == b
-    True
+    >>> lst = [ReadNode(0, 5, 0, 7), ReadNode(0, 10, 0, 12), \
+    ReadNode(1, 1, 1, 0)]
+    >>> generate_tree_general(lst, 2)
+    HuffmanNode(None, HuffmanNode(None, HuffmanNode(10, None, None), \
+HuffmanNode(12, None, None)), \
+HuffmanNode(None, HuffmanNode(5, None, None), HuffmanNode(7, None, None)))
     """
-    
+
+    #Create a copy of the node list
     nodes = node_lst[:]
     
+    #Make our root, the root index we were given
     root = nodes.pop(root_index)
     
     #We know that each node has it's node number at the same place as it's
     #index, so if our root is not the last item in the list we need to
     #put some placeholder to compensate
     
+    #At our root_index, replace it with None, so as it doesnt change the length
+    #of the list
     nodes.insert(root_index, None)
     
+    #Create a new HuffmanNode to be our root node
     root_node = HuffmanNode()
-    
+
+    #If the left type of our original root is an internal node
     if root.l_type == 1:
+        #With our root_node, recurse through the tree except our root index
+        #is now the data of our left internal node
         root_node.left = generate_tree_general(nodes, root.l_data)
-        
+    
+    #Else make the left of our root_node a new Node with left data of root
     else:
         root_node.left = HuffmanNode(root.l_data)
         
+    #Same process as with left except with right
     if root.r_type == 1:
         root_node.right = generate_tree_general(nodes, root.r_data)
     
@@ -528,7 +546,6 @@ def generate_tree_general(node_lst, root_index):
         root_node.right = HuffmanNode(root.r_data)
         
     return root_node
-
 
 def generate_tree_postorder(node_lst, root_index):
     """ Return the root of the Huffman tree corresponding
@@ -546,10 +563,35 @@ def generate_tree_postorder(node_lst, root_index):
     HuffmanNode(None, HuffmanNode(None, HuffmanNode(5, None, None), \
 HuffmanNode(7, None, None)), \
 HuffmanNode(None, HuffmanNode(10, None, None), HuffmanNode(12, None, None)))
-    """
+        """
     
+    def _count_internals(t):
+        '''
+        Return the total amount of internal nodes in tree t.
+        
+        '''
+        
+        total = 0
+        
+        #If we have a tree
+        if t:
+            
+            #If t.left is an internal node, add 1 to the total and repeat
+            #With the left subtree
+            if t.left and not t.left.is_leaf():
+                total += _count_internals(t.left) + 1
+                
+            #If t.right is an internal node add 1 to the total and repeat
+            #With the right subtree
+            if t.right and not t.right.is_leaf():
+                total += _count_internals(t.right) + 1
+                
+        return total    
+    
+    #Create a copy of the nodes list
     nodes = node_lst[:]
     
+    #Make our root the node at the given index for nodes
     root = nodes[root_index]
     
     #We know that each index is the postorder equivalent of the parent at that 
@@ -562,28 +604,26 @@ HuffmanNode(None, HuffmanNode(10, None, None), HuffmanNode(12, None, None)))
     
     #We cannot use the l_data or r_data properties for internals
     
-    root_node = HuffmanNode('{}:{}'.format('N',root_index))
+    root_node = HuffmanNode()
     
+    #If the right tree is an internal node
     if root.r_type == 1:
         
+        #generate the post order with a smaller list, and a shifted root_index
         root_node.right = generate_tree_postorder(nodes[:-1], root_index - 1)
         
     else:
+        #make the right of the root node with the data given
         root_node.right = HuffmanNode(root.r_data)
         
     #After we have reached the end of the right side, the 
     #next found one on the left will be the one before in the postorder repr
     
+    
+    #Repeat the same process but with the left data and subtrees
     if root.l_type == 1:
         
-        #Ok so here is where i get stuck: we know that we can keep decreasing
-        #the postorder number, problem is that we dont know how many were
-        #already added on the right subtree so we dont know where to splice
-        #the list. We could make a helper function that counts the number of 
-        #internals and subtracts that
-        
-        #print(root_node)
-        internals = count_internals(root_node)
+        internals = _count_internals(root_node)
         root_node.left = generate_tree_postorder(nodes[:-1 * internals], \
                                                  root_index - 1 - internals)
         
@@ -592,19 +632,7 @@ HuffmanNode(None, HuffmanNode(10, None, None), HuffmanNode(12, None, None)))
         
     return root_node
         
-def count_internals(t):
-    
-    total = 0
-    
-    if t:
-        
-        if t.left and t.left.left and t.left.right:
-            total += count_internals(t.left) + 1
-            
-        if t.right and t.right.left and t.right.right:
-            total += count_internals(t.right) + 1
-            
-    return total
+
             
 def generate_uncompressed(tree, text, size):
     """ Use Huffman tree to decompress size bytes from text.
@@ -618,44 +646,51 @@ def generate_uncompressed(tree, text, size):
     #We take a tree, compressed bytes like the output in our generate_compressed
     #and a number of items to decode, to avoid adding padding to output
     
-    
+    #get the codes of the given tree
     codes = get_codes(tree)
 
-    
+    #inverse the dictionary of codes we created
     inverse_codes = {value: key for key, value in codes.items()}
-
+    
     bit_form = []
+    #Use a cache to not have to recalculte byte_to_bits if we already know it
+    #for any value
     cache = {}
-    output = []
     
     for b in text:
+        
+        #We get all of our strings as list items, runtime is faster than simply
+        #adding strings each iteration        
+    
         if b not in cache:
             cache[b] = byte_to_bits(b)
+            
         bit_form.append(cache[b])
         
+    #Now we can do one simple join to concatanate to a single string
     bit_form = ''.join(bit_form)
     
-
     output = []
     
+    #Another time saver: instead of actually slicing a string to compare, we can
+    #just check between the indicies without equating to anything
     check_from = 0
     check_to = 1
     found = 0
-
     
     while found < size:
-        
+    
         checker = bit_form[check_from:check_to]
         
         if checker in inverse_codes:
-            
+            #Once we find a match, we can go ahead and add it to our output
+            #and push our starting pointer
             output.append(inverse_codes[checker])
             check_from = check_to
             found += 1
             
         check_to += 1
             
-        
     return bytes(output)
 
 def bytes_to_nodes(buf):
@@ -728,84 +763,80 @@ def improve_tree(tree, freq_dict):
     >>> improve_tree(tree, freq)
     >>> avg_length(tree, freq)
     2.31
-    #"""
-
-    def reassign(t, properties):
-        if t:
-            
-            if t.left and t.left.is_leaf():
-                t.left.symbol = properties.pop(0)
-                
-            elif t.left:
-                t.left = reassign(t.left, properties)
-                
-            if t.right and t.right.is_leaf():
-                t.right.symbol = properties.pop(0)
-                
-            elif t.right:
-                t.right = reassign(t.right, properties)
-                
-            return t
-    
+    """                   
 
     info = []
     
-    for key in freq_dict: #We appends occurances and symbols as a tuple
+    #We append occurrences and symbols as a tuple
+    for key in freq_dict: 
         info.append((freq_dict[key], key))
     
-    #We sort it based on the
-    kv = sorted(info, reverse=True)
-    kv = [x[1] for x in kv]
+    #Sort based on the occurrences, then make our list only the symbols
+    symbols = sorted(info, reverse=True)
+    symbols = [x[1] for x in symbols]
     
-    return reassign(tree, kv)
+    nodes = [tree]
+    
+    #This code works on the basis of checking each level before moving down the
+    #tree, WITHOUT using recursion. When we find any leaf at the next level
+    #we can give it the symbol of the most frequent node that we still have not
+    #assigned anywhere
+    
+    #When we find an internal child of the current node, we simply append it to
+    #a new list for the next iteration, and we keep doing this until we have 
+    #reassigned all our nodes
+    
+    while symbols != []:
         
-
-    
-    '''
-
-    == Version 3 == 
-    Take all the leaf nodes of the tree and replace them with none but still
-    keep them as leaves. With these nodes we can use an ADT to store them
-    (let's say a Stack for this purpose.) With our stack, our bottom element
-    is the node with the highest frequency and the our top element is the node
-    with the lowest frequency. 
-    
-    By starting at the depth of the tree, we pop from our stack and then change
-    that none leaf to whatever element we popped out. We fill leaf nodes from 
-    the bottom up. We work 1 level at a time. Once all the leaf nodes of that 
-    one level is filled, we just work up a level. We keep going until our stack
-    is empty, this means our tree is filled.
-    
-    We know that:
-        1. Our tree retains the same structure, except all its leaf nodes become
-           None nodes aka HuffmanNode(None, None, None). So if we find a node
-           that is this, just replace with the top element of our stack.
-        2. The stack will guarantee that the top elements (lowest frequencies)
-           will appear at the bottom of the tree. This also takes care of ties,
-           because if a depth is full, we just work on the next level.
-        3. We don't have to swap nodes, simply take out all the nodes and
-           replace them accordingly.
-           
-    - A problem we may encounter is knowing when to go up a level, how we know
-      when we the depth is full on either sub tree, and things similar to this.
-    '''
+        new_nodes = []
         
-    
-
+        for n in nodes:
+                
+            if n.left and n.left.is_leaf():
+                n.left.symbol = symbols.pop(0)
+                
+            else:
+                new_nodes.append(n.left)
+                
+            if n.right and n.right.is_leaf():
+                n.right.symbol = symbols.pop(0)
+                
+            else:
+                new_nodes.append(n.right)
+                
+        nodes = new_nodes[:]
+        new_nodes = []
+        
 if __name__ == "__main__":
+
+    #letters = {'A':3, 'B':1, 'C':4, 'D':6, 'E':2, 'F':5}
+    ##print(avg_length(tree, freq))
+    #tree = HuffmanNode()
+    #tree.left = HuffmanNode()
+    #tree.left.left = HuffmanNode('A')
+    #tree.left.right = HuffmanNode()
+    #tree.left.right.left = HuffmanNode('B')
+    #tree.left.right.right = HuffmanNode('C')
     
-    left = HuffmanNode(None, HuffmanNode(99), HuffmanNode(100))
-    right = HuffmanNode(None, HuffmanNode(101), \
-       HuffmanNode(None, HuffmanNode(97), HuffmanNode(98)))
-    
-    tree = HuffmanNode(None, left, right)
-    
-    freq = {97: 26, 98: 23, 99: 20, 100: 16, 101: 15}
-    print(avg_length(tree, freq))
-    improve_tree(tree, freq)
-    print(avg_length(tree, freq))
-    #cProfile.run('compress("b.txt", "b.huf")')
-    #cProfile.run('uncompress("b.huf", "output.txt")')
+    #tree.right = HuffmanNode()
+    #tree.right.left = HuffmanNode('D')
+    #tree.right.right = HuffmanNode()
+    #tree.right.right.left = HuffmanNode('E')
+    #tree.right.right.right = HuffmanNode('F')
+    #t = improve_tree(tree, letters)
+    #print(t.symbol)
+    #print(t.left.symbol)
+    #print(t.left.left.symbol == 'D')
+    #print(t.left.right.symbol)
+    #print(t.left.right.left.symbol == 'C')
+    #print(t.left.right.right.symbol == 'A')
+    #print(t.right.symbol)
+    #print(t.right.left.symbol == 'F')
+    #print(t.right.right.right.symbol == 'B')
+    #print(t.right.right.left.symbol == 'E')
+    #print(avg_length(tree, freq))
+    cProfile.run('compress("a.txt", "a.huf")')
+    cProfile.run('uncompress("a.huf", "one.txt")')
     
     #ht = HuffmanNode()
     #ht.left = HuffmanNode(0)
@@ -816,7 +847,8 @@ if __name__ == "__main__":
     
     #import python_ta
     #python_ta.check_all(config="huffman_pyta.txt")
-    # TODO: Uncomment these when you have implemented all the functions
+    ##TODO: Uncomment these when you have implemented all the functions
+    
     #import doctest
     #doctest.testmod()
 
