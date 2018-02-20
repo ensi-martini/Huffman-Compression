@@ -1,7 +1,7 @@
 """
 Code for compressing and decompressing using Huffman compression.
 """
-#dickbutt
+
 from nodes import HuffmanNode, ReadNode
 import cProfile
 import pstats
@@ -808,61 +808,21 @@ def improve_tree(tree, freq_dict):
         new_nodes = []
         
 if __name__ == "__main__":
+    
+    import doctest
+    doctest.testmod()
 
-    #letters = {'A':3, 'B':1, 'C':4, 'D':6, 'E':2, 'F':5}
-    ##print(avg_length(tree, freq))
-    #tree = HuffmanNode()
-    #tree.left = HuffmanNode()
-    #tree.left.left = HuffmanNode('A')
-    #tree.left.right = HuffmanNode()
-    #tree.left.right.left = HuffmanNode('B')
-    #tree.left.right.right = HuffmanNode('C')
-    
-    #tree.right = HuffmanNode()
-    #tree.right.left = HuffmanNode('D')
-    #tree.right.right = HuffmanNode()
-    #tree.right.right.left = HuffmanNode('E')
-    #tree.right.right.right = HuffmanNode('F')
-    #t = improve_tree(tree, letters)
-    #print(t.symbol)
-    #print(t.left.symbol)
-    #print(t.left.left.symbol == 'D')
-    #print(t.left.right.symbol)
-    #print(t.left.right.left.symbol == 'C')
-    #print(t.left.right.right.symbol == 'A')
-    #print(t.right.symbol)
-    #print(t.right.left.symbol == 'F')
-    #print(t.right.right.right.symbol == 'B')
-    #print(t.right.right.left.symbol == 'E')
-    #print(avg_length(tree, freq))
-    cProfile.run('compress("a.txt", "a.huf")')
-    cProfile.run('uncompress("a.huf", "one.txt")')
-    
-    #ht = HuffmanNode()
-    #ht.left = HuffmanNode(0)
-    #ht.right = HuffmanNode()
-    #ht.right.left = HuffmanNode(10)
-    #ht.right.right = HuffmanNode(11)
-    #print(get_codes(ht))
-    
-    #import python_ta
-    #python_ta.check_all(config="huffman_pyta.txt")
-    ##TODO: Uncomment these when you have implemented all the functions
-    
-    #import doctest
-    #doctest.testmod()
+    import time
 
-    #import time
-
-    #mode = input("Press c to compress or u to uncompress: ")
-    #if mode == "c":
-        #fname = input("File to compress: ")
-        #start = time.time()
-        #compress(fname, fname + ".huf")
-        #print("compressed {} in {} seconds."
-        #.format(fname, time.time() - start))
-    #elif mode == "u":
-        #fname = input("File to uncompress: ")
-        #start = time.time()
-        #uncompress(fname, fname + ".orig")
-        #print("uncompressed {} in {} seconds.".format(fname, time.time() - start))
+    mode = input("Press c to compress or u to uncompress: ")
+    if mode == "c":
+        fname = input("File to compress: ")
+        start = time.time()
+        compress(fname, fname + ".huf")
+        print("compressed {} in {} seconds."
+        .format(fname, time.time() - start))
+    elif mode == "u":
+        fname = input("File to uncompress: ")
+        start = time.time()
+        uncompress(fname, fname + ".orig")
+        print("uncompressed {} in {} seconds.".format(fname, time.time() - start))
